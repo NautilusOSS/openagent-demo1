@@ -10,6 +10,9 @@ This document describes the **work required to complete** [x402](https://www.x40
 
 > **Motive: body-driven price in the 402 / `PAYMENT-REQUIRED` leg (design note)**  
 > [keeperhub-variable-pricing-and-402.md](./keeperhub-variable-pricing-and-402.md) — why you might want request arguments to change the quoted USDC, how that relates to a **variable platform fee**, and where that would be implemented in the [KeeperHub](https://github.com/KeeperHub/keeperhub) codebase (vs this microtip repo).
+>
+> **Alternative: no KeeperHub 1.0 code change — “packs” and fee / change (design note)**  
+> [keeperhub-pack-fallback.md](./keeperhub-pack-fallback.md) — multiple **listed** workflows (fixed prices as pack sizes), satisfying repayment by slug choice, and what **“fee retained, change returned”** can mean with **exact** x402 USDC (bookkeeping vs on-chain refund vs credit).
 
 ---
 

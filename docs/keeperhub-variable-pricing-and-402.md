@@ -44,6 +44,12 @@ Conceptually, implementation would add a **resolver** (e.g. `resolvePriceForPaid
 
 ---
 
+## Alternative: fixed “pack” workflows (no app update)
+
+If you do **not** want to change KeeperHub’s **per-request** 402 price, a separate pattern is: **several** listed workflows at **different** `priceUsdcPerCall` (packs), and the caller picks a slug. **“Fee” and “change”** in that world need careful definition (exact x402 = one on-chain leg; true USDC return is a separate step or off-chain credit). See [keeperhub-pack-fallback.md](./keeperhub-pack-fallback.md).
+
+---
+
 ## This **microtip** repository
 
 The **Vite** app here implements the **browser buyer** with `@x402/fetch` and a fixed default URL. It does **not** implement KeeperHub server-side **variable** pricing. Any change to **body-driven** quotes is **server work** in the KeeperHub repo (or your fork) plus, if the API changes, a **small** client update in microtip to send the new JSON fields.
@@ -55,6 +61,7 @@ For the original discussion that motivated this note (extra in payment, variable
 ## See also
 
 - [docs/index.md](./index.md) — main x402 / microtip / KeeperHub index.  
+- [keeperhub-pack-fallback.md](./keeperhub-pack-fallback.md) — pack ladder without dynamic 402, fee/change nuance.  
 - [x402 (Coinbase CDP)](https://docs.cdp.coinbase.com/x402) — client and facilitator concepts.  
 - [Paid Workflows (KeeperHub product docs)](https://docs.keeperhub.com/workflows/paid-workflows) — creator view of per-call USDC.  
 

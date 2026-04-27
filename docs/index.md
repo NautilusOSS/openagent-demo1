@@ -8,6 +8,9 @@ This document describes the **work required to complete** [x402](https://www.x40
 > - KeeperHub agent wallets overview: [x402 Wallets for AI Agents](https://docs.keeperhub.com/ai-tools/agent-wallets) (content mirrors `docs/ai-tools/agent-wallets.md` in the repo on `staging`).  
 > - Creator-side paid flows: [Paid Workflows](https://docs.keeperhub.com/workflows/paid-workflows) (`docs/workflows/paid-workflows.md`).
 
+> **Motive: body-driven price in the 402 / `PAYMENT-REQUIRED` leg (design note)**  
+> [keeperhub-variable-pricing-and-402.md](./keeperhub-variable-pricing-and-402.md) — why you might want request arguments to change the quoted USDC, how that relates to a **variable platform fee**, and where that would be implemented in the [KeeperHub](https://github.com/KeeperHub/keeperhub) codebase (vs this microtip repo).
+
 ---
 
 ## 1. How KeeperHub charges for a workflow call (x402 on Base)
@@ -62,23 +65,24 @@ For agents, “complete” usually means **use an x402-capable wallet and fund B
 ### 2.3 End-to-end check
 
 - Discover a paid read workflow: OpenAPI, `search_workflows`, or GET [`/openapi.json`](https://app.keeperhub.com/openapi.json).  
-- **Dogfood:** listed workflow `mcp-test` at the URL pattern in [Paid Workflows](https://docs.keeperhub.com/workflows/paid-workflows) (small per-call USDC, accepts both x402 and MPP for integration testing).  
+- **This app** defaults the paid `POST` to `https://app.keeperhub.com/api/mcp/workflows/microtip/call` (see [Paid Workflows](https://docs.keeperhub.com/workflows/paid-workflows) for listing / pricing in general).  
 - Confirm success: 200 with execution result; optional BaseScan of settlement via facilitator receipt where exposed.
 
 ---
 
-## 3. Work: browser / this repo (Vite + wagmi “Base Web3” dapp)
+## 3. Browser / this repo (**microtip**)
 
-To add **x402** here (instead of or in addition to the current **ETH + message** demo), you need non-trivial extra scope:
+The app is named **microtip** (`package.json` `name`, RainbowKit `appName` in `src/wagmi.ts`). The browser x402 work from the earlier gap list is implemented as follows.
 
-| Gap | What to do |
-|-----|------------|
-| **Asset** | Add **USDC (ERC-20) on Base** in wagmi/viem config, not only native `value` transfers. |
-| **Protocol** | Implement a **client loop**: `POST` → on **402**, decode `PAYMENT-REQUIRED` (or current header set), build **EIP-3009** authorization, sign with the connected account, **retry** with `PAYMENT-SIGNATURE` (or the header the 402 response specifies). Use [CDP / x402 client libraries](https://docs.cdp.coinbase.com/x402) or an ecosystem helper rather than reimplementing from scratch. |
-| **Key custody** | Browser wallets are OK for dev; for automation parity with **KeeperHub’s** agent story, a **server-proxied** or **MPC** pattern (like **Turnkey** via `@keeperhub/wallet`) is often preferred. |
-| **Test vs prod** | Use **Base Sepolia** only if the paid endpoint you target explicitly supports a testnet facilitator; hosted KeeperHub paid calls are **Base mainnet USDC** per current docs. |
+| Item | Status |
+|------|--------|
+| **USDC on Base** | **Read** in `src/MicrotipPanel.tsx` via `useReadContract` (Circle USDC). **Payment signing** is via `@x402/evm` `ExactEvmScheme` (EIP-3009), not a manual `transfer` in the UI. |
+| **402 client loop** | `createX402Fetch()` in `src/lib/x402.ts` — `toClientEvmSigner` + `wrapFetchWithPayment` from [`@x402/fetch`](https://www.npmjs.com/package/@x402/fetch) (v2). |
+| **Host / CORS** | **`npm run dev` / `preview`:** Vite proxies `/keeperhub` → `app.keeperhub.com` (see `vite.config.ts`) so the default `POST` is same-origin. For static hosting, set **`VITE_X402_TEST_URL`** to a full URL or add a reverse proxy. |
+| **UI** | `src/MicrotipPanel.tsx` — URL, JSON body, USDC balance, `PAYMENT-RESPONSE` when returned. |
+| **Key custody** | **Browser** — for headless or MPC parity, use [@keeperhub/wallet](https://github.com/KeeperHub/agentic-wallet) instead. |
 
-**Concrete tasks (checklist):** wire USDC in `src/wagmi.ts`; add an `x402Fetch` (or `payAndCallWorkflow`) helper; point at a known paid `POST` URL; handle errors and `PAYMENT-RESPONSE` / settlement headers; document `VITE_*` for any facilitator API key if your client requires it.
+A buyer-only facilitator key is not required in the dapp; settlement uses whatever the paid API (e.g. KeeperHub) configures. See [x402 — Quickstart for buyers](https://docs.cdp.coinbase.com/x402/quickstart-for-buyers).
 
 ---
 
@@ -107,10 +111,11 @@ Treat that file on the `staging` branch (or the release you use) as the **implem
 - [ ] Rely on the wallet/tooling to perform **402 → sign → retry**; verify 200 and execution id / output.  
 - [ ] (Optional) Support **Tempo MPP** if the client stack pays via MPP instead of x402.
 
-### For this repository (openagent-demo) to “complete” x402 in-app
+### For this repository (**microtip**) — x402 in the browser
 
-- [ ] Add **USDC** + x402 **402/ retry** client, or delegate to a backend that runs `@keeperhub/wallet` / facilitator logic.  
-- [ ] **Do not** conflate the existing **ETH transfer** form with x402; document both separately.
+- [x] **USDC** balance read + `@x402/fetch` + `ExactEvmScheme` in `src/lib/x402.ts` and `src/MicrotipPanel.tsx`.  
+- [x] **ETH** send and **x402** are **separate** UIs.  
+- [ ] (Optional) Delegate to a **backend** with `@keeperhub/wallet` if you need headless or MPC.
 
 ### For a developer extending KeeperHub upstream
 
@@ -127,4 +132,4 @@ Treat that file on the `staging` branch (or the release you use) as the **implem
 - [x402.org](https://www.x402.org/) (protocol positioning).  
 - [KeeperHub/agentic-wallet](https://github.com/KeeperHub/agentic-wallet) (npm: `@keeperhub/wallet`).
 
-This doc is project-local note-taking for **NautilusOSS / openagent-demo-1** and should be **re-validated** against the live [KeeperHub docs](https://docs.keeperhub.com) and the exact branch you use from [KeeperHub/keeperhub](https://github.com/KeeperHub/keeperhub) before production or compliance decisions.
+This doc is project-local note-taking for the **microtip** repo and should be **re-validated** against the live [KeeperHub docs](https://docs.keeperhub.com) and the exact branch you use from [KeeperHub/keeperhub](https://github.com/KeeperHub/keeperhub) before production or compliance decisions.

@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_BASE_SEPOLIA_RPC_URL?: string
   /** Optional: override the default public RPC for Base mainnet. */
   readonly VITE_BASE_MAINNET_RPC_URL?: string
+  /** Optional: full URL for x402 test POST. See defaultX402TestUrl() in src/lib/x402.ts. */
+  readonly VITE_X402_TEST_URL?: string
 }
 
 interface ImportMeta {

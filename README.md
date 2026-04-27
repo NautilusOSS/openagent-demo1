@@ -1,6 +1,6 @@
-# Base Web3 App (React + Vite + wagmi + viem + RainbowKit)
+# microtip (React + Vite + wagmi + viem + RainbowKit + x402)
 
-A minimal dapp to connect a wallet, stay on **Base** or **Base Sepolia** (testnet, default), and sign a message or send a small **native ETH** transfer. It uses modern **wagmi v2** and **viem** patterns, so you can later plug in x402, paid API flows, or custom `WalletClient` logic without a large rewrite.
+A minimal dapp: connect a wallet, stay on **Base** or **Base Sepolia** (testnet, default), sign a message, send a little **ETH**, and on **Base mainnet** run an **x402** paid `POST` to the [KeeperHub](https://app.keeperhub.com) `microtip` workflow (`/api/mcp/workflows/microtip/call`) using **USDC** and `@x402/fetch` + `@x402/evm`. See `docs/index.md` and `src/lib/x402.ts`.
 
 ## Install
 
@@ -20,6 +20,8 @@ npm install
 
 3. Optionally set `VITE_BASE_SEPOLIA_RPC_URL` and/or `VITE_BASE_MAINNET_RPC_URL` if you want a dedicated JSON-RPC (recommended for production).
 
+4. For **x402** in production or `vite preview` (no dev proxy), set `VITE_X402_TEST_URL` to the full paid endpoint URL, or run a reverse proxy that rewrites the path like `vite.config.ts` does for `/keeperhub`.
+
 Inline comments in `src/wagmi.ts` also note where the **default chain** (Base Sepolia first) and **RPCs** are configured.
 
 ## Run (development)
@@ -28,7 +30,7 @@ Inline comments in `src/wagmi.ts` also note where the **default chain** (Base Se
 npm run dev
 ```
 
-Open the shown local URL, connect with RainbowKit, use **“Switch to Base Sepolia”** to align with the default test network, get testnet ETH from a [Base Sepolia faucet](https://www.alchemy.com/faucets/base-sepolia-faucet), then try **Sign message** and **Send transaction**.
+Open the shown local URL, connect with RainbowKit, use **“Switch to Base Sepolia”** for the default test path: get testnet ETH from a [Base Sepolia faucet](https://www.alchemy.com/faucets/base-sepolia-faucet), then try **Sign message** and **Send transaction**. For **x402 microtip**, use **“Switch to Base”** and a small **USDC** balance on Base mainnet, then **Pay and call** (the dev server proxies `/keeperhub` to app.keeperhub.com so the default URL avoids CORS).
 
 ## Build (production)
 
@@ -45,15 +47,16 @@ npm run preview
 | Ethereum state  | wagmi, @tanstack/react-query             |
 | Chains + crypto | viem                                     |
 | Connect / UX    | @rainbow-me/rainbowkit (WalletConnect + injected) |
+| x402 (buy)      | `@x402/fetch`, `@x402/evm` (`src/lib/x402.ts`) |
 
-- **Base mainnet** and **Base Sepolia** are both configured. The first chain in `src/wagmi.ts` is the **default** (Base Sepolia for safe testing).
+- **Base mainnet** and **Base Sepolia** are both configured. The first chain in `src/wagmi.ts` is the **default** (Base Sepolia for safe testing). **x402** calls use **Base mainnet** USDC to `microtip` /call; switch with the Network card.
 - There are **no private keys** in this repo. Users sign in their own wallet; never put a secret key in frontend env or code.
 
 ## Safety and extension points
 
-- Default to **Base Sepolia**; switch to mainnet only when you are ready and understand real funds.
-- `src/wagmi.ts` is the right place to add a **custom `transport`**, a **faucet-only chain**, or wrap the config for a future **x402** or pay-per-request flow (often by composing viem’s `http` and custom middleware).
-- The **Sign message** and **Send transaction** actions use the connected account only; to charge an API, you would add a new hook or server that verifies signatures or on-chain state.
+- Default to **Base Sepolia**; switch to **Base** for the **x402 microtip** with real (small) USDC when you are ready.
+- `src/wagmi.ts` holds the RPC overrides and `appName` for RainbowKit. **x402** is wired in `src/lib/x402.ts` and `src/MicrotipPanel.tsx` (CORS: dev **proxy** in `vite.config.ts` or `VITE_X402_TEST_URL`).
+- **Sign message** and **ETH send** are separate from the **x402** flow (USDC EIP-3009 via the `ExactEvmScheme` path).
 
 ## License
 

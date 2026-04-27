@@ -18,7 +18,7 @@ const mainnetRpc = import.meta.env.VITE_BASE_MAINNET_RPC_URL
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? ''
 
 export const config = getDefaultConfig({
-  appName: 'Base Web3 App',
+  appName: 'microtip',
   projectId: walletConnectProjectId,
   chains: defaultChains,
   transports: {

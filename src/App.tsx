@@ -14,6 +14,7 @@ import {
   SUPPORTED_CHAIN_IDS,
   walletConnectProjectId,
 } from './wagmi'
+import { MicrotipPanel } from './MicrotipPanel'
 import './App.css'
 
 const APP_MESSAGE = 'I authorize this app to use my wallet on Base.'
@@ -113,11 +114,11 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Base Web3</h1>
+        <h1>microtip</h1>
         <p className="lede">
-          Connect a wallet, stay on Base or Base Sepolia, and try signing a
-          message or sending a small ETH amount. This layout is a natural place
-          to add x402 or paid API flows later.
+          Connect a wallet, stay on Base or Base Sepolia, sign a message, send
+          a little ETH, or on <strong>Base mainnet</strong> use the x402
+          microtip flow (USDC) for paid HTTP calls like KeeperHub workflows.
         </p>
         <ConnectButton />
       </header>
@@ -207,6 +208,8 @@ function App() {
             </p>
           )}
         </section>
+
+        <MicrotipPanel />
 
         <section className="card">
           <h2>Sign message</h2>

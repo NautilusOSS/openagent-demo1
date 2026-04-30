@@ -1,12 +1,21 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount, useChainId, usePublicClient, useReadContract, useWalletClient } from 'wagmi'
 import { base } from 'wagmi/chains'
 import {
+  fetchKeeperhubWorkflows,
+  khPublicWorkflowCallUrl,
+  khWorkflowCallUrl,
+  type KHWorkflowListItem,
+  type WorkflowPickerSlug,
+  WORKFLOW_PICKER_SLUGS,
+} from './lib/keeperhub'
+import {
   createX402Fetch,
-  defaultX402TestUrl,
+  formatX402ClientError,
   tryDecodePaymentFromResponse,
 } from './lib/x402'
+import { defaultWorkflowExecuteBody } from './lib/workflow-default-body'
 
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const
 
@@ -37,12 +46,52 @@ export function MicrotipPanel() {
     query: { enabled: Boolean(address && onBaseMainnet) },
   })
 
-  const [url, setUrl] = useState(() => defaultX402TestUrl())
+  const [selectedWorkflow, setSelectedWorkflow] =
+    useState<WorkflowPickerSlug>('microtip')
+  const [url, setUrl] = useState(() => khWorkflowCallUrl('microtip'))
   const [jsonBody, setJsonBody] = useState('{}')
   const [status, setStatus] = useState<MicrotipStatus>('idle')
   const [err, setErr] = useState<string | null>(null)
   const [resultText, setResultText] = useState<string | null>(null)
   const [paymentInfo, setPaymentInfo] = useState<string | null>(null)
+  const [catalogBySlug, setCatalogBySlug] = useState<
+    Partial<Record<WorkflowPickerSlug, KHWorkflowListItem>>
+  >({})
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchKeeperhubWorkflows()
+      .then((items) => {
+        if (cancelled) return
+        const next: Partial<Record<WorkflowPickerSlug, KHWorkflowListItem>> = {}
+        for (const slug of WORKFLOW_PICKER_SLUGS) {
+          const found = items.find((i) => i.listedSlug === slug)
+          if (found) next[slug] = found
+        }
+        setCatalogBySlug(next)
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setCatalogError(
+          e instanceof Error ? e.message : 'Could not load workflow list.',
+        )
+      })
+      .finally(() => {
+        if (cancelled) return
+        setCatalogLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const onPickWorkflow = (slug: WorkflowPickerSlug) => {
+    setSelectedWorkflow(slug)
+    setUrl(khWorkflowCallUrl(slug))
+    setJsonBody(defaultWorkflowExecuteBody())
+  }
 
   const fetchWithPay = useMemo(() => {
     if (!onBaseMainnet || !walletClient || !publicClient) return null
@@ -100,17 +149,16 @@ export function MicrotipPanel() {
       setResultText(text)
       setStatus('done')
     } catch (e) {
-      const m = e instanceof Error ? e.message : String(e)
-      setErr(m)
+      setErr(formatX402ClientError(e))
       setStatus('err')
     }
   }, [fetchWithPay, jsonBody, url])
 
   return (
     <section className="card">
-      <h2>x402 microtip</h2>
+      <h2>KeeperHub paid workflows</h2>
       <p className="muted sm">
-        <strong>microtip</strong> uses <code>@x402/fetch</code> +{' '}
+        Paid workflow calls use <code>@x402/fetch</code> +{' '}
         <code>ExactEvmScheme</code> (EIP-3009 USDC on Base). After a 402, your
         wallet signs typed data, then the request retries with a payment
         header. This matches how paid workflow calls (e.g. on{' '}
@@ -142,6 +190,60 @@ export function MicrotipPanel() {
           your address.
         </p>
       )}
+      <p className="label">Workflow</p>
+      {catalogError && (
+        <p className="muted sm" role="status">
+          Catalog: {catalogError} (cards still use the call URL for each slug.)
+        </p>
+      )}
+      {catalogLoading && (
+        <p className="muted sm" aria-live="polite">
+          Loading workflow descriptions from KeeperHub…
+        </p>
+      )}
+      <div
+        className="workflow-pick"
+        role="group"
+        aria-label="KeeperHub workflow to call"
+      >
+        {WORKFLOW_PICKER_SLUGS.map((slug) => {
+          const row = catalogBySlug[slug]
+          const name = row?.name ?? slug
+          const desc =
+            row?.description?.trim() ??
+            'Not returned in the public list yet; the POST URL still targets this slug. Try Pay and call if your org listed it.'
+          const price =
+            row?.priceUsdcPerCall != null && row.priceUsdcPerCall !== ''
+              ? `${row.priceUsdcPerCall} USDC / call`
+              : '—'
+          const isSelected = selectedWorkflow === slug
+          return (
+            <button
+              type="button"
+              key={slug}
+              className={
+                isSelected
+                  ? 'workflow-card workflow-card--selected'
+                  : 'workflow-card'
+              }
+              onClick={() => onPickWorkflow(slug)}
+              aria-pressed={isSelected}
+            >
+              <div className="workflow-card__title">
+                {name}
+              </div>
+              <p className="workflow-card__slug mono-sm">/{slug}</p>
+              <p className="workflow-card__desc">{desc}</p>
+              <div className="workflow-card__foot">
+                <span className="workflow-card__price">{price}</span>
+                {isSelected && (
+                  <span className="workflow-card__sel">Selected</span>
+                )}
+              </div>
+            </button>
+          )
+        })}
+      </div>
       <label>
         POST URL
         <input
@@ -152,11 +254,26 @@ export function MicrotipPanel() {
           disabled={!onBaseMainnet}
         />
       </label>
+      {import.meta.env.DEV && (
+        <p className="muted sm" role="note">
+          <strong>Local dev</strong> uses same-origin Vite proxies so x402 retries are not blocked
+          by CORS:{' '}
+          <code>{globalThis.location?.origin}/keeperhub/api/mcp/workflows/…/call</code> →
+          app.keeperhub.com.
+        </p>
+      )}
+      {import.meta.env.DEV && (
+        <p className="muted sm">
+          Public endpoint (for reference):{' '}
+          <code className="mono-sm">
+            {khPublicWorkflowCallUrl(selectedWorkflow)}
+          </code>
+        </p>
+      )}
       <p className="muted sm">
-        In <code>npm run dev</code> the default path is proxied to app.keeperhub
-        (see <code>vite.config.ts</code>) to avoid browser CORS. For{' '}
-        <code>preview</code> / static hosting, set <code>VITE_X402_TEST_URL</code>
-        or put a reverse proxy in front.
+        Production and <code>preview</code> use{' '}
+        <code>https://app.keeperhub.com/…/call</code> unless you set{' '}
+        <code>VITE_X402_TEST_URL</code> or a reverse proxy.
       </p>
       <label>
         JSON body

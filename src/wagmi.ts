@@ -18,7 +18,7 @@ const mainnetRpc = import.meta.env.VITE_BASE_MAINNET_RPC_URL
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? ''
 
 export const config = getDefaultConfig({
-  appName: 'microtip',
+  appName: 'KeeperHub paid workflows',
   projectId: walletConnectProjectId,
   chains: defaultChains,
   transports: {

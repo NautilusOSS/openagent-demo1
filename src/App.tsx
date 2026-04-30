@@ -14,6 +14,7 @@ import {
   SUPPORTED_CHAIN_IDS,
   walletConnectProjectId,
 } from './wagmi'
+import { GatewayExecutePanel } from './GatewayExecutePanel'
 import { MicrotipPanel } from './MicrotipPanel'
 import './App.css'
 
@@ -114,11 +115,11 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>microtip</h1>
+        <h1>KeeperHub paid workflows</h1>
         <p className="lede">
           Connect a wallet, stay on Base or Base Sepolia, sign a message, send
-          a little ETH, or on <strong>Base mainnet</strong> use the x402
-          microtip flow (USDC) for paid HTTP calls like KeeperHub workflows.
+          a little ETH, or on <strong>Base mainnet</strong> pay with x402
+          (USDC) for KeeperHub paid workflow HTTP calls.
         </p>
         <ConnectButton />
       </header>
@@ -210,6 +211,8 @@ function App() {
         </section>
 
         <MicrotipPanel />
+
+        <GatewayExecutePanel />
 
         <section className="card">
           <h2>Sign message</h2>

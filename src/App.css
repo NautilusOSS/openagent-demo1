@@ -223,6 +223,102 @@
   font-size: 0.85em;
 }
 
+/* KeeperHub paid workflows panel (MicrotipPanel) */
+.workflow-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin: 0.35rem 0 1rem;
+}
+
+@media (max-width: 36rem) {
+  .workflow-pick {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workflow-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e5e4e7);
+  background: var(--bg, #fff);
+  color: var(--text-h, #08060d);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.workflow-card:hover {
+  border-color: #93a8e8;
+  box-shadow: 0 1px 0 rgba(27, 92, 255, 0.2);
+}
+
+.workflow-card:focus-visible {
+  outline: 2px solid #1b5cff;
+  outline-offset: 2px;
+}
+
+.workflow-card--selected {
+  border-color: #1b5cff;
+  box-shadow: 0 0 0 1px rgba(27, 92, 255, 0.2);
+  background: rgba(27, 92, 255, 0.04);
+}
+
+.workflow-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-h, #08060d);
+  margin: 0 0 0.2rem;
+}
+
+.workflow-card__slug {
+  display: block;
+  margin: 0 0 0.4rem;
+  color: var(--text, #6b6375);
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.workflow-card__desc {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text, #6b6375);
+  margin: 0 0 0.55rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.workflow-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text, #6b6375);
+}
+
+.workflow-card__price {
+  font-weight: 500;
+  color: var(--text-h, #1a3d0c);
+  font-size: 0.75rem;
+}
+
+.workflow-card__sel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #1b5cff;
+  font-weight: 600;
+}
+
 @media (prefers-color-scheme: dark) {
   .app {
     --card-bg: #1c1d24;
@@ -247,5 +343,60 @@
 
   .card-warn {
     background: rgba(234, 179, 8, 0.1);
+  }
+
+  .workflow-card {
+    background: #0f1014;
+  }
+
+  .workflow-card--selected {
+    background: rgba(27, 92, 255, 0.12);
+  }
+}
+
+/* Paid workflow gateway execute panel */
+.gateway-panel .workflow-pick {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+}
+
+.gateway-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.gateway-health {
+  font-size: 0.85rem;
+}
+
+.gateway-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 1rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.gateway-grid label {
+  display: block;
+}
+
+.gateway-span-2 {
+  grid-column: span 2;
+}
+
+.gateway-field {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 36rem) {
+  .gateway-span-2 {
+    grid-column: span 1;
+  }
+
+  .gateway-grid {
+    grid-template-columns: 1fr;
   }
 }

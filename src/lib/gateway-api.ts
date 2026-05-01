@@ -3,8 +3,8 @@
  *
  * Schema reference: **`lendpay-backend`** (`WorkflowDefinition`, `executeWorkflowBodySchema`, routes).
  * - `GET /workflows` — JSON array of `{ id, name, description, paymentMinUsd, paymentMaxUsd, requiredFields }`
- * - `POST /workflows/:workflowId/execute` — body `{ chain, protocol, action, targetAddress, asset, amount }` (strings;
- *   `targetAddress` must match `/^0x[a-fA-F0-9]{40}$/`. Body `amount` (USD) is the x402 USDC charge
+ * - `POST /workflows/:workflowId/execute` — body `{ chain, protocol, action, targetAddress, benefactorAddress, asset, amount }` (strings;
+ *   `targetAddress` must match `/^0x[a-fA-F0-9]{40}$/`; `benefactorAddress` is required (EVM 0x address or 58-char Algorand). Body `amount` (USD) is the x402 USDC charge
  *   and must fall in each workflow’s `paymentMinUsd`–`paymentMaxUsd` from `GET /workflows`.
  *
  * `BASE_URL` is configurable via env or dev `/gateway` proxy (see `GatewayExecutePanel`).
@@ -34,6 +34,7 @@ export type ExecuteRequestBody = {
   protocol: string
   action: string
   targetAddress: string
+  benefactorAddress: string
   asset: string
   amount: string
 }

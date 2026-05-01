@@ -56,6 +56,12 @@ function parseErrorPayload(text: string): GatewayErrorPayload | null {
   }
 }
 
+function isValidBenefactorAddress(value: string): boolean {
+  const v = value.trim()
+  if (/^0x[a-fA-F0-9]{40}$/.test(v)) return true
+  return /^[A-Z2-7]{58}$/i.test(v)
+}
+
 export function GatewayExecutePanel() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
@@ -90,6 +96,7 @@ export function GatewayExecutePanel() {
   const [protocol, setProtocol] = useState(WORKFLOW_DEFAULT_PROTOCOL_ACTION['aave-repay'].protocol)
   const [action, setAction] = useState(WORKFLOW_DEFAULT_PROTOCOL_ACTION['aave-repay'].action)
   const [targetAddress, setTargetAddress] = useState('')
+  const [benefactorAddress, setBenefactorAddress] = useState('')
   const [asset, setAsset] = useState('USDC')
   const [amount, setAmount] = useState('10.00')
 
@@ -181,10 +188,11 @@ export function GatewayExecutePanel() {
       protocol: protocol.trim(),
       action: action.trim(),
       targetAddress: resolvedTargetAddress,
+      benefactorAddress: benefactorAddress.trim(),
       asset: asset.trim(),
       amount: amount.trim(),
     }
-  }, [chain, protocol, action, resolvedTargetAddress, asset, amount])
+  }, [chain, protocol, action, resolvedTargetAddress, benefactorAddress, asset, amount])
 
   const runExecute = useCallback(async () => {
     if (!fetchWithPay) {
@@ -201,6 +209,15 @@ export function GatewayExecutePanel() {
     if (!ta || !isAddress(ta as `0x${string}`)) {
       setErrMsg(
         'Enter a valid targetAddress (0x + 40 hex), or connect a wallet to use your address.',
+      )
+      setStatus('err')
+      return
+    }
+
+    const bf = bodyForSubmit.benefactorAddress
+    if (!bf || !isValidBenefactorAddress(bf)) {
+      setErrMsg(
+        'Enter benefactorAddress: a 0x + 40 hex EVM address, or a 58-character Algorand public address.',
       )
       setStatus('err')
       return
@@ -403,6 +420,16 @@ export function GatewayExecutePanel() {
             value={targetAddress}
             onChange={(e) => setTargetAddress(e.target.value.trim())}
             placeholder={address ? `Default ${address.slice(0, 6)}…${address.slice(-4)}` : '0x…'}
+          />
+        </label>
+        <label className="gateway-span-2">
+          benefactorAddress (required — EVM 0x… or 58-char Algorand)
+          <input
+            className="input mono-sm"
+            value={benefactorAddress}
+            onChange={(e) => setBenefactorAddress(e.target.value.trim())}
+            placeholder="0x… or Algorand public address"
+            autoComplete="off"
           />
         </label>
         <label>
